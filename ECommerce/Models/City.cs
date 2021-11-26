@@ -21,6 +21,9 @@ namespace ECommerce.Models
         public int DepartamentsId { get; set; }
 
         public virtual ICollection<Company> Company { get; set; }
+
+        public virtual ICollection<User> User { get; set; }
+
         public virtual Departaments Departament { get; set; }
     }
 }

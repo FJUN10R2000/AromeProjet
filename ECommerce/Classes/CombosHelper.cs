@@ -1,5 +1,6 @@
 ﻿using ECommerce.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -35,7 +36,25 @@ namespace ECommerce.Classes
 
             return dep = dep.OrderBy(d => d.Name).ToList();
 
+        } public static List<Company> GetCompanys()
+        {
+
+            var comp = db.Companies.ToList();
+            comp.Add(new Company 
+            {
+                CompanyId = 0,
+                Name = "[ Selecione um Companhia ]"
+            });
+
+            return comp = comp.OrderBy(c => c.Name).ToList();
+
         }
+
+        internal static IEnumerable GetCompanies()
+        {
+            throw new NotImplementedException();
+        }
+
         public void Dispose()
         {
             db.Dispose();

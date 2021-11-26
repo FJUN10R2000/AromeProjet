@@ -35,6 +35,9 @@ namespace ECommerce.Models
         [DataType(DataType.ImageUrl)]
         public string Logo { get; set; }
 
+        [NotMapped]
+        public HttpPostedFileBase LogoFile { get; set; }
+
         [Required(ErrorMessage = "O campo Departamento é requirido!!")]
         [Display(Name = "Departamento")]
         public int DepartamentsId { get; set; }
@@ -45,5 +48,10 @@ namespace ECommerce.Models
 
         public virtual Departaments Departaments { get; set; }
         public virtual City Cities { get; set; }
+
+        public virtual ICollection<User> User { get; set; }
+        public virtual ICollection<Category> Category { get; set; }
+
+        public virtual ICollection<Tax> Taxes { get; set; }
     }
 }
