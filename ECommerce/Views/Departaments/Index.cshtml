@@ -27,9 +27,7 @@
             @Html.ActionLink("Detalhes", "Details", new { id = item.DepartamentsId }, new { @class = "btn btn-info" }) |
             @Html.ActionLink("Excluir", "Delete", new { id = item.DepartamentsId }, new { @class = "btn btn-danger" })
 
-            <input type="button" text-align="right" class="btn btn-info" value="Let's Go!" onclick="location.href='@Url.Action("Excluir", "Delete")'" />
-
-        </td>
+           </td>
     </tr>
 }
 

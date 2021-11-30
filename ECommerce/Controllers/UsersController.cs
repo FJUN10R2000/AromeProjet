@@ -1,14 +1,28 @@
-﻿using ECommerce.Models;
+﻿using ECommerce.Classes;
+using ECommerce.Models;
 using System.Data.Entity;
 using System.Linq;
 using System.Net;
 using System.Web.Mvc;
+using static ECommerce.Classes.UserHelper;
 
 namespace ECommerce.Controllers
 {
     public class UsersController : Controller
     {
         private EcommerceContext db = new EcommerceContext();
+
+
+
+        //CONTROLE DE LIST VIEW EM CASCATA
+        public JsonResult GetCities(int departmentId)
+        {
+            db.Configuration.ProxyCreationEnabled = false;
+            var cities = db.Cities.Where(c => c.DepartamentsId == departmentId);
+            return Json(cities);
+        }
+
+
 
         // GET: Users
         public ActionResult Index()
@@ -35,29 +49,49 @@ namespace ECommerce.Controllers
         // GET: Users/Create
         public ActionResult Create()
         {
-            ViewBag.CityId = new SelectList(db.Cities, "CityId", "Name");
-            ViewBag.CompanyId = new SelectList(db.Companies, "CompanyId", "Name");
-            ViewBag.DepartamentsId = new SelectList(db.Departaments, "DepartamentsId", "Name");
+            ViewBag.CityId = new SelectList(CombosHelper.GetCities(), "CityId", "Name");
+            ViewBag.CompanyId = new SelectList(CombosHelper.GetCompanys(), "CompanyId", "Name");
+            ViewBag.DepartamentsId = new SelectList(CombosHelper.GetDepartaments(), "DepartamentsId", "Name");
             return View();
         }
 
         // POST: Users/Create
-        // Para se proteger de mais ataques, habilite as propriedades específicas às quais você quer se associar. Para 
-        // obter mais detalhes, veja https://go.microsoft.com/fwlink/?LinkId=317598.
+        // Para se proteger de mais ataques, ative as propriedades específicas a que você quer se conectar. Para 
+        // obter mais detalhes, consulte https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "UserId,UserName,FirtName,LastName,Phone,Address,Photo,DepartamentsId,CityId,CompanyId")] User user)
+        public ActionResult Create(User user)
         {
             if (ModelState.IsValid)
             {
                 db.Users.Add(user);
                 db.SaveChanges();
+                UsersHelper.CreateUserASP(user.UserName, "User");
+
+                if (user.PhotoFile != null)
+                {
+
+                    var pic = string.Empty;
+                    var folder = "~/Content/Users";
+                    var file = string.Format("{0}.jpg", user.UserId);
+
+                    var response = FilesHelper.UploadPhoto(user.PhotoFile, folder, file);
+                    if (response)
+                    {
+                        pic = string.Format("{0}/{1}", folder, file);
+                        user.Photo = pic;
+                        db.Entry(user).State = EntityState.Modified;
+                        db.SaveChanges();
+                    }
+
+                }
+
                 return RedirectToAction("Index");
             }
 
-            ViewBag.CityId = new SelectList(db.Cities, "CityId", "Name", user.CityId);
-            ViewBag.CompanyId = new SelectList(db.Companies, "CompanyId", "Name", user.CompanyId);
-            ViewBag.DepartamentsId = new SelectList(db.Departaments, "DepartamentsId", "Name", user.DepartamentsId);
+            ViewBag.CityId = new SelectList(CombosHelper.GetCities(), "CityId", "Name", user.CityId);
+            ViewBag.CompanyId = new SelectList(CombosHelper.GetCompanys(), "CompanyId", "Name", user.CompanyId);
+            ViewBag.DepartamentsId = new SelectList(CombosHelper.GetDepartaments(), "DepartamentsId", "Name", user.DepartamentsId);
             return View(user);
         }
 
@@ -73,28 +107,54 @@ namespace ECommerce.Controllers
             {
                 return HttpNotFound();
             }
-            ViewBag.CityId = new SelectList(db.Cities, "CityId", "Name", user.CityId);
-            ViewBag.CompanyId = new SelectList(db.Companies, "CompanyId", "Name", user.CompanyId);
-            ViewBag.DepartamentsId = new SelectList(db.Departaments, "DepartamentsId", "Name", user.DepartamentsId);
+            ViewBag.CityId = new SelectList(CombosHelper.GetCities(), "CityId", "Name", user.CityId);
+            ViewBag.CompanyId = new SelectList(CombosHelper.GetCompanys(), "CompanyId", "Name", user.CompanyId);
+            ViewBag.DepartamentsId = new SelectList(CombosHelper.GetDepartaments(), "DepartamentsId", "Name", user.DepartamentsId);
             return View(user);
         }
 
         // POST: Users/Edit/5
-        // Para se proteger de mais ataques, habilite as propriedades específicas às quais você quer se associar. Para 
-        // obter mais detalhes, veja https://go.microsoft.com/fwlink/?LinkId=317598.
+        // Para se proteger de mais ataques, ative as propriedades específicas a que você quer se conectar. Para 
+        // obter mais detalhes, consulte https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "UserId,UserName,FirtName,LastName,Phone,Address,Photo,DepartamentsId,CityId,CompanyId")] User user)
+        public ActionResult Edit(User user)
         {
             if (ModelState.IsValid)
             {
+
+                if (user.PhotoFile != null)
+                {
+
+                    var pic = string.Empty;
+                    var folder = "~/Content/Users";
+                    var file = string.Format("{0}.jpg", user.UserId);
+
+                    var response = FilesHelper.UploadPhoto(user.PhotoFile, folder, file);
+                    if (response)
+                    {
+                        pic = string.Format("{0}/{1}", folder, file);
+                        user.Photo = pic;
+
+                    }
+
+                }
+
+                var db2 = new EcommerceContext();
+                var currentUser = db2.Users.Find(user.UserId);
+                if (currentUser.UserName != user.UserName)
+                {
+                    UsersHelper.UpdateUserName(currentUser.UserName, user.UserName);
+                }
+                db2.Dispose();
                 db.Entry(user).State = EntityState.Modified;
                 db.SaveChanges();
+
                 return RedirectToAction("Index");
             }
-            ViewBag.CityId = new SelectList(db.Cities, "CityId", "Name", user.CityId);
-            ViewBag.CompanyId = new SelectList(db.Companies, "CompanyId", "Name", user.CompanyId);
-            ViewBag.DepartamentsId = new SelectList(db.Departaments, "DepartamentsId", "Name", user.DepartamentsId);
+            ViewBag.CityId = new SelectList(CombosHelper.GetCities(), "CityId", "Name", user.CityId);
+            ViewBag.CompanyId = new SelectList(CombosHelper.GetCompanys(), "CompanyId", "Name", user.CompanyId);
+            ViewBag.DepartamentsId = new SelectList(CombosHelper.GetDepartaments(), "DepartamentsId", "Name", user.DepartamentsId);
             return View(user);
         }
 
@@ -121,6 +181,7 @@ namespace ECommerce.Controllers
             User user = db.Users.Find(id);
             db.Users.Remove(user);
             db.SaveChanges();
+            UsersHelper.DeleteUser(user.UserName);
             return RedirectToAction("Index");
         }
 
